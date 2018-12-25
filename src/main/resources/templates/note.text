@@ -1,0 +1,152 @@
+Spring中的AOP（五）——定义切入点和切入点指示符
+定义切入点
+
+    在前文（点击查看）中使用到的AdviceTest类中同一个切点（即* com.abc.service.*.advice*(..)匹配的连接点）却重复定义了多次，这显然不符合软件设计的原则，为了解决这个问题，AspectJ和spring都提供了切入点的定义。所谓定义切入点，其实质就是为一个切入点表达式起一个名称，从而允许在多个增强处理中重用该名称。
+
+    Spring AOP只支持以Spring Bean的方法执行组作为连接点，所以可以把切入点看作所有能和切入表达式匹配的Bean方法。切入点定义包含两个部分：
+
+一个切入点表达式：用于指定切入点和哪些方法进行匹配
+
+一个包含名字和任意参数的方法签名：将作为切入点的名称
+
+    在@AspectJ风格的AOP中，切入点签名采用一个普通的方法定义（方法体通常为空）来提供（方法名即为切点名），且该方法的返回值必须为void，切入点表达式需使用@Pointcut注解来标注。下面的代码片段定义了一个切入点，这个切入点将匹配任何名为transfer的方法的执行：
+
+1
+2
+3
+4
+//使用@Pointcut注解时指定切入点表达式
+@Pointcut("execution(* transfer(..))")
+//使用一个返回值为void，方法体为空的方法来命名切入点，方法名即为切点名
+private void myPointcut(){}
+    切入点表达式，也就是组成@Pointcut注解的值，是规范的AspectJ 5切入点表达式。如果想要了解更多的关于AspectJ切入点语言，请参见AspectJ编程指南。
+
+    一旦采用上面的代码片段定义了名为myPointcut的切入点之后，程序就可以多次重复使用该切点了，甚至可以在其他切面类、其他包的切面类里使用该切点，至于是否可以在其他切面类、其他包下使用这个切点，那就要看该方法前的访问控制修饰符了——本例中myPointcut使用private修饰，则意味着仅能在当前切面类中使用这个切点。
+
+    如果需要使用本切面类中的切点，则可在使用@Pointcut注解时，指定value属性值为已有的切入点，如下：
+
+1
+2
+3
+4
+@AfterReturning(pointcut="myPointcut()", returning="returnValue")
+public void log(String message, Object returnValue) {
+    //do something...
+}
+    从指定pointcut来看，其语法非常类似于Java中调用方法——只是该方法代表一个切点，其实质是为该增强处理方法定义一个切入点表达式。如果需要使用其他类中定义的切点，则定义这些切点的方法的修饰符不能为private。现在假设在另一个类PointcutDefinition中定义了一个名为myPointcutTest的切点：
+
+1
+2
+3
+4
+5
+public class PointcutDefinition {
+    @Pointcut("execution(* something(..))")
+    //访问控制符为public，这个切点可以在其他任何地方引用
+    public void myPointcutTest(){}
+}
+    则在引用的时候需要带上类名，例如：
+
+1
+2
+3
+4
+5
+6
+@AfterReturning(
+    pointcut="PointcutDefinition.myPointcutTest() && args(message)",
+    returning="returnValue")
+public void log(String message, Object returnValue) {
+    //do something...
+}
+
+
+切入点指示符
+
+    前面定义切点表达式时使用了大量的execution表达式，其中execution就是一个切入点指示符。Spring AOP仅支持部分AspectJ的切入点指示符，但Spring AOP还额外支持一个bean切入点指示符。不仅如此，因为Spring AOP只支持使用方法调用作为连接点，所以Spring AOP的切入点指示符仅匹配方法执行的连接点。
+
+    完整的AspectJ切入点语言支持大量切入点指示符，但是Spring并不支持它们。它们是：call，get，preinitialization，staticinitialization，initialization，handler，adviceexecution，withincode，cflow，cflowbelow，if，@this和@withincode。一旦在Spring AOP中使用这些切点指示符，就会抛出IllegalArgumentException。
+
+    Spring AOP支持的切入点指示符有如下几个：
+
+execution：用于匹配执行方法的连接点，这是Spring AOP中国最主要的切入点指示符。该切入点的用法也相对复杂，execution表达式的格式如下：
+
+    execution(modifier-pattern? ret-type-pattern declaring-type-pattern? name-pattern(param-pattern) throws-pattern?)
+
+    上面的格式中，execution是不变的，用于作为execution表达式的开头，整个表达式中几个参数的详细解释如下：
+
+modifier-pattern：指定方法的修饰符，支持通配符，该部分可以省略
+
+ret-type-pattern：指定返回值类型，支持通配符，可以使用“*”来通配所有的返回值类型
+
+declaring-type-pattern：指定方法所属的类，支持通配符，该部分可以省略
+
+name-pattern：指定匹配的方法名，支持通配符，可以使用“*”来通配所有的方法名
+
+param-pattern：指定方法的形参列表，支持两个通配符，“*”和“..”，其中“*”代表一个任意类型的参数，而“..”代表0个或多个任意类型的参数。
+
+throw-pattern：指定方法声明抛出的异常，支持通配符，该部分可以省略
+
+
+
+如下是几个execution表达式：
+
+execution(public * * (..))//匹配所有public方法
+
+execution(* set*(..))//匹配以set开始的方法
+
+execution(* com.abc.service.AdviceManager.* (..))//匹配AdviceManager中任意方法
+
+execution(* com.abc.service.*.* (..))//匹配com.abc.servcie包中任意类的任意方法
+
+within：限定匹配特定类型的连接点，当使用Spring AOP的时候，只能匹配方法执行的连接点。下面是几个例子：
+
+within(com.abc.service.*)//匹配com.abc.service包中的任意连接点
+
+within(com.abc.service..*)//匹配com.abc.service包或子包中任意的连接点
+
+this：用于指定AOP代理必须是指定类型的实例，用于匹配该对象的所有连接点。当使用Spring AOP的时候，只能匹配方法执行的连接点。下面是个例子：
+
+        this(com.abc.service.AdviceManager)//匹配实现了AdviceManager接口的代理对象的所有连接点，在Spring中只是方法执行的连接点
+
+target：用于限定目标对象必须是指定类型的实例，用于匹配该对象的所有连接点。当使用Spring AOP的时候，只能匹配方法执行的连接点。下面是个例子：
+
+        target(com.abc.servcie.AdviceManager)//匹配实现了AdviceManager接口的目标对象的所有连接点，在Spring中只是方法执行的连接点
+
+args：用于对连接点的参数类型进行限制，要求参数的类型时指定类型的实例。同样，当使用Spring AOP的时候，只能匹配方法执行的连接点。下面是个例子：
+
+args(java.io.Serializable)//匹配只接受一个参数，且参数类型是Serializable的所有连接点，在Spring中只是方法执行的连接点
+
+注意，这个例子与使用execution(* *(java.io.Serializable))定义的切点不同，args版本只匹配运行时动态传入参数值是Serializable类型的情形，而execution版本则匹配方法签名只包含一个Serializable类型的形参的方法。
+
+
+
+    另外，Spring AOP还提供了一个名为bean的切入点提示符，它是Spring AOP额外支持的，并不是AspectJ所支持的切入点指示符。这个指示符对Spring框架来说非常有用：它将指定为Spring中的哪个Bean织入增强处理。当然，Spring AOP中只能使用方法执行作为连接点。
+
+bean：用于指定只匹配该Bean实例内的连接点，实际上只能使用方法执行作为连接点。定义bean表达式时需要传入Bean的id或name，支持使用"*"通配符。下面是几个例子：
+
+        bean(adviceManager)//匹配adviceManager实例内方法执行的连接点
+
+        bean(*Manager)//匹配以Manager结尾的实例内方法执行的连接点
+
+
+
+使用组合切点表达式
+
+    Spring支持使用如下三个逻辑运算符来组合切入点表达式：
+
+&&：要求连接点同时匹配两个切点表达式
+
+||：要求连接点匹配至少一个切入点表达式
+
+!：要求连接点不匹配指定的切入点表达式
+
+
+
+    其实在之前介绍args的时候，已经用到了“&&”运算符：
+
+1
+pointcut("execution(* com.abc.service.*.*(..) && args(name))")
+    上面的pointcut由两个表达式组成，而且使用&&来组合这两个表达式，因此连接点需要同时满足这两个表达式才能被织入增强处理。
+
+http://blog.csdn.net/caomiao2006/article/details/51287204

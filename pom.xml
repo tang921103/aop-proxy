@@ -11,9 +11,9 @@
     <groupId>com</groupId>
     <artifactId>proxy</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>proxy</name>
+    <name>aop</name>
+    <packaging>war</packaging>
     <description>Demo project for Spring Boot</description>
-
     <properties>
         <java.version>1.8</java.version>
     </properties>
@@ -35,6 +35,14 @@
             <artifactId>mybatis-spring-boot-starter</artifactId>
             <version>1.3.2</version>
         </dependency>
+        <!--springboot AOP支持-->
+        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+            <version>2.1.1.RELEASE</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-thymeleaf -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -87,6 +95,13 @@
             <artifactId>spring-aop</artifactId>
             <version>4.3.9.RELEASE</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/cglib/cglib -->
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+            <version>3.2.10</version>
+        </dependency>
+
         <!--shiro-->
         <dependency>
             <groupId>org.apache.shiro</groupId>

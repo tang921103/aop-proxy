@@ -21,5 +21,13 @@ public class ProxyApplicationTests {
         userServiceProxy.findAll();
 //        throw new RuntimeException("异常");
     }
+    @Test
+    public void test2(){
+        userServiceProxy.findById(1);
+    }
+    @Test
+    public void test3(){
+        userServiceProxy.findByName("tang");
+    }
 }
 
