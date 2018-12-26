@@ -2,6 +2,7 @@ package com.proxy;
 
 import com.demo.ProxyApplication;
 import com.demo.aop.Dog;
+import com.demo.aop.Friends;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,10 +14,10 @@ import javax.annotation.Resource;
 @SpringBootTest(classes = ProxyApplication.class)
 public class DogTestProxy {
     @Resource
-    private Dog dog;
+    private Friends dog;
     @Test
     public void test1(){
-        dog.doDog();
+//        dog.doDog();
         dog.friend();
     }
 }
